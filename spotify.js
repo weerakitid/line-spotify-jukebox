@@ -10,9 +10,9 @@ class Spotify {
     });
 
     // สร้าง Login url เพื่อสามารถเข้าถึงสิทธิต่าง ๆ ของเครื่องหลักที่ต่อลำโพง
-    const scopes = ['playlist-read-private', 'playlist-modify', 'playkist-modify-private']
+    const scopes = ['playlist-read-private', 'playlist-modify', 'playlist-modify-private']
     const authorizeUrl = this.api.createAuthorizeURL(scopes, 'default-state')
-    console.log(`Authorization requieds. Please visit ${authorizeUrl}`)
+    console.log(`Authorization required. Please visit ${authorizeUrl}`)
   }
 
   isAuthTokenValid() {
@@ -73,11 +73,11 @@ class Spotify {
     this.api.setAccessToken(result.body.access_token)
   }
 
-  async recivedAuthCode(authCode) {
+  async receivedAuthCode(authCode) {
     // ได้รับ Authorization code ตอนที่ call back url ถูกเรียก
     // จากนั้นเอา code นี้ไปรับ access token กับ refresh token อีกที
     const authFlow = await this.api.authorizationCodeGrant(authCode)
-    this.auth = authFlow.bofy
+    this.auth = authFlow.body
 
     // เก็บค่า expires time ไว้ใช้ตอนเรียก refresh token
     const expiresAt = new Date

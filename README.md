@@ -1,0 +1,1 @@
+เดี๋ยวทำต่อ https://medium.com/linedevth/jukebox-chatbot-line-spotify-e410a84b50d8

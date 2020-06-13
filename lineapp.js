@@ -11,7 +11,7 @@ const Commands = {
 }
 
 class lineApp {
-  async recievedPostback(e) {
+  async receivedPostback(e) {
     const payload = JSON.parse(e.postback.data)
     switch (payload.commands) {
       case Commands.ADD_TRACK: {
@@ -29,7 +29,7 @@ class lineApp {
     await spotify.queueTrack(track)
     const message = {
       type: "flex",
-      altTeaxt: "Thanks! Your track has been added.",
+      altText: "Thanks! Your track has been added.",
       contents:
       {
         type: "bubble",
@@ -86,13 +86,13 @@ class lineApp {
       const message = {
         type: "flex",
         altText: "Your Spotify search result",
-        constents: {
+        contents: {
           type: "bubble",
           size: "giga",
           header: {
             type: "box",
             layout: "horizontal",
-            contens: [
+            contents: [
               {
                 type: "image",
                 url: "https://bcrm-i.line-scdn.net/bcrm/uploads/1557539795/public_asset/file/853/1591094107652078_Spotify_Icon_RGB_White.png",
@@ -108,7 +108,7 @@ class lineApp {
                 size: "xxs",
                 align: "end",
                 gravity: "center",
-                positon: "relative",
+                position: "relative",
                 weight: "regular"
               }
             ],
@@ -118,7 +118,7 @@ class lineApp {
             type: "box",
             layout: "vertical",
             contents: [],
-            backgroundColot: "#191414",
+            backgroundColor: "#191414",
             spacing: "md"
           },
           styles: {
@@ -133,13 +133,140 @@ class lineApp {
       if (showMoreButton) {
         message.contents.footer = this.generateMoreButton({
           command: Commands.SEARCH_MORE,
-          trems: terms,
+          terms: terms,
           skip: skip + limit,
           limit: limit
         })
       }
 
-      // นำผลลัพธ์
+      // นำผลลัพธ์ที่ได้มาแสดงใน Flex message โดยวนลูปสร้างทีละเพลง
+      message.contents.body.contents = result.items.map(track => {
+        this.sortTrackArtwork(track)
+        return {
+          type: "box",
+          layout: "horizontal",
+          contents: [
+            {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "image",
+                  aspectRatio: "4:3",
+                  aspectMode: "cover",
+                  url: track.album.images.length > 0 ? track.album.image[0].url : ""
+                }
+              ],
+              flex: 0,
+              cornerRadius: "5px",
+              width: "30%",
+              spacing: "none"
+            },
+            {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "text",
+                  size: "md",
+                  color: "#1DB954",
+                  style: "normal",
+                  weight: "bold",
+                  text: track.name,
+                  wrap: true
+                },
+                {
+                  type: "text",
+                  size: "xxs",
+                  wrap: true,
+                  color: "#FFFFFF",
+                  text: this.generateArtistList(track)
+                }
+              ],
+              spacing: "none",
+              width: "40%"
+            },
+            {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "button",
+                  action: this.generatePostbackButton("Add", { command: Commands.ADD_TRACK, track: track.id }),
+                  style: "primary",
+                  gravity: "bottom",
+                  color: "#1DB954"
+                }
+              ],
+              spacing: "none",
+              width: "20%"
+            }
+          ],
+          backgroundColor: "#191414",
+          spacing: "xl",
+          cornerRadius: "5px"
+        }
+      });
+      return message;
+    }
+  }
+
+  generatePostbackButton(title, payload) {
+    return {
+      type: "postback",
+      label: title,
+      data: JSON.stringify(payload)
+    };
+  }
+
+  generateMoreButton(payload) {
+    return {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "button",
+          action: {
+            type: "postback",
+            label: "More",
+            data: JSON.stringify(payload)
+          },
+          style: "secondary"
+        }
+      ],
+      backgroundColor: "#191414"
+    };
+  }
+
+  generateArtistList(track) {
+    // ในกรณีที่เพลงนั้นๆอาจจะมีชื่อศิลปินหลายคน จะ list ชื่อของศิลปินแต่ละคน ตามด้วย comma
+    let artists = "";
+    track.artists.forEach((artist) => {
+      artists = artists + ", " + artist.name;
+    });
+    artists = artists.substring(2);
+    return artists;
+  }
+
+  sortTrackArtwork(track) {
+    // จัดเรียงภาพอัลบั้มตามขนาด จากขนาดเล็กไปขนาดใหญ่ (ascending)
+    track.album.images.sort((a, b) => {
+      return b.width - a.width;
+    });
+  }
+
+  async replyMessage(replyToken, message) {
+    try {
+      await Promise.resolve(request.post({
+        headers: LINE_HEADER,
+        uri: `${process.env.LINE_MESSAGING_API}/reply`,
+        body: JSON.stringify({
+          replyToken: replyToken,
+          messages: [message]
+        })
+      }))
+    } catch (error) {
+      console.error(`Delivery to LINE failed (${error})`);
     }
   }
 }
